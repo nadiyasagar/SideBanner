@@ -1,58 +1,95 @@
 package com.brine.sidebanner
 
-import android.app.Activity
 import android.graphics.Color
-import android.graphics.Typeface
-import android.util.TypedValue
-import android.view.Gravity
-import android.view.ViewGroup
-import android.widget.FrameLayout
-import android.widget.TextView
+import android.content.Context
+import android.graphics.*
+import android.os.Build
+import android.util.AttributeSet
+import android.view.View
+import androidx.annotation.Nullable
 
-object SideBanner {
+class SideBanner @JvmOverloads constructor(
+    context: Context,
+    @Nullable attrs: AttributeSet? = null,
+    defStyleAttr: Int = 0,
+    defStyleRes: Int = 0
+) : View(context, attrs, defStyleAttr, defStyleRes) {
 
-    fun attach(activity: Activity) {
-        if (!BuildConfig.DEBUG) return
+    private var paint: Paint = Paint()
+    private var rect: Rect? = null
+    private var textPaint: Paint = Paint()
 
-        val context = activity
+    private var viewHeight: Int = 0
+    private var viewWidth: Int = 0
+    private var index: Int = 0
 
-        // Convert 100dp to px
-        val size = TypedValue.applyDimension(
-            TypedValue.COMPLEX_UNIT_DIP, 100f, context.resources.displayMetrics
-        ).toInt()
+    private var showText: String? = null
+    private var backgroundColor: Int = Color.BLUE
+    private var textSizePx: Int = 20
+    private var textColor: Int = Color.BLACK
 
-        // Square container
-        val container = FrameLayout(context).apply {
-            layoutParams = FrameLayout.LayoutParams(size, size)
+    init {
+        val t = context.obtainStyledAttributes(attrs, R.styleable.FloatImageView)
+        backgroundColor = t.getColor(R.styleable.FloatImageView_backgroundColor, Color.BLUE)
+        textSizePx = t.getDimensionPixelSize(R.styleable.FloatImageView_textSize, 20)
+        showText = t.getString(R.styleable.FloatImageView_text) ?: "DEBUG"
+        textColor = t.getColor(R.styleable.FloatImageView_textColor, Color.BLACK)
+        t.recycle()
+
+        initPaint()
+    }
+
+    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec)
+        viewHeight = measuredHeight
+        viewWidth = measuredWidth
+        index = (viewHeight / 3) / 2
+    }
+
+    override fun onDraw(canvas: Canvas) {
+        super.onDraw(canvas)
+        canvas.save()
+
+        paint.color = backgroundColor
+        rect = Rect(-200, viewHeight / 2, viewWidth + 200, viewHeight / 2 + index)
+
+        canvas.rotate(-45f, (viewWidth / 2).toFloat(), (viewHeight / 2).toFloat())
+        rect?.let { canvas.drawRect(it, paint) }
+
+        showText?.let {
+            canvas.drawText(
+                it,
+                (viewWidth / 2).toFloat(),
+                (viewHeight / 2 + (index * 3) / 4).toFloat(),
+                textPaint
+            )
         }
 
-        // DEBUG text across the square
-        val textView = TextView(context).apply {
-            text = "DEBUG"
-            setBackgroundColor(Color.rgb(165, 42, 42)) // brown-red
-            setTextColor(Color.WHITE)
-            textSize = 12f
-            typeface = Typeface.DEFAULT_BOLD
-            gravity = Gravity.CENTER
-            rotation = 45f
-            setPadding(30, 6, 30, 6)
+        canvas.restore()
+    }
+
+    private fun initPaint() {
+        paint = Paint()
+
+        textPaint = Paint().apply {
+            textSize = textSizePx.toFloat()
+            color = textColor
+            textAlign = Paint.Align.CENTER // Center horizontally
         }
 
-        val textParams = FrameLayout.LayoutParams(
-            FrameLayout.LayoutParams.WRAP_CONTENT,
-            FrameLayout.LayoutParams.WRAP_CONTENT,
-            Gravity.CENTER
-        )
-        container.addView(textView, textParams)
-
-        // Stick container to top-right with overlap
-        val params = FrameLayout.LayoutParams(size, size).apply {
-            gravity = Gravity.TOP or Gravity.END
-            topMargin = -size / 2    // move upward so it touches the top
-            marginEnd = -size / 2    // move right so it touches the edge
+        if (Build.VERSION.SDK_INT > 21) {
+            elevation = 1f
         }
+    }
 
-        (activity.window.decorView as ViewGroup).addView(container, params)
+    fun setText(msg: String) {
+        showText = msg
+        invalidate()
+    }
+
+    fun setBackGroundColor(color: Int) {
+        backgroundColor = color
+        invalidate()
     }
 }
 
