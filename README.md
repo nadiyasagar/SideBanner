@@ -33,7 +33,7 @@ Add the dependency in your **app module**:
 
 ```gradle
 dependencies {
-    implementation 'com.github.nadiyasagar:SideBanner:1.0.2'
+    implementation 'com.github.nadiyasagar:SideBanner:1.0.4'
 }
 ```
 
